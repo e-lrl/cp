@@ -13,7 +13,7 @@ def obtener_datos():
     except Exception as e:
         return f"Error inesperado: {e}"
 
-# Función para verificar el estado del servidor
+# Función para verificar el estado del servidor (solo afecta el LED)
 def verificar_estado():
     # Cambiar el color del LED a naranja mientras se verifica el estado
     led_canvas.itemconfig(led_circle, fill="orange")
@@ -22,13 +22,10 @@ def verificar_estado():
         response = requests.get("http://localhost:5000/status")
         response.raise_for_status()  # Verifica si la solicitud tuvo éxito
         led_canvas.itemconfig(led_circle, fill="green")  # Cambiar el LED a verde si está conectado
-        return response.json().get("status", "Estado no disponible")
     except requests.ConnectionError:
         led_canvas.itemconfig(led_circle, fill="red")  # Cambiar el LED a rojo si no está conectado
-        return "Error: No se pudo conectar al servidor. Modo local activado."
     except Exception as e:
         led_canvas.itemconfig(led_circle, fill="red")  # Cambiar el LED a rojo en caso de error
-        return f"Error inesperado: {e}"
 
 # Función para mostrar datos en la interfaz gráfica
 def mostrar_datos():
