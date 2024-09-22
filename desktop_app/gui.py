@@ -1,22 +1,44 @@
 import tkinter as tk
-from tkinter import messagebox
-from controller import obtener_datos, verificar_estado
+from tkinter import Canvas
+import requests
 
-# Función para obtener datos desde el servidor y mostrarlos en la interfaz
-def mostrar_datos():
+# Función para obtener datos desde el servidor
+def obtener_datos():
     try:
-        datos = obtener_datos()
-        resultado_label.config(text=datos)
+        response = requests.get("http://localhost:5000/")
+        response.raise_for_status()  # Verifica si la solicitud tuvo éxito
+        return response.json().get("message", "No hay datos disponibles")
+    except requests.ConnectionError:
+        return "Error: No se pudo conectar al servidor. Funcionando en modo local."
     except Exception as e:
-        messagebox.showerror("Error", f"No se pudo obtener datos: {e}")
+        return f"Error inesperado: {e}"
 
 # Función para verificar el estado del servidor
-def mostrar_estado():
+def verificar_estado():
+    # Cambiar el color del LED a naranja mientras se verifica el estado
+    led_canvas.itemconfig(led_circle, fill="orange")
+    root.update_idletasks()  # Forzar actualización para que el cambio de color sea visible
     try:
-        estado = verificar_estado()
-        resultado_label.config(text=estado)
+        response = requests.get("http://localhost:5000/status")
+        response.raise_for_status()  # Verifica si la solicitud tuvo éxito
+        led_canvas.itemconfig(led_circle, fill="green")  # Cambiar el LED a verde si está conectado
+        return response.json().get("status", "Estado no disponible")
+    except requests.ConnectionError:
+        led_canvas.itemconfig(led_circle, fill="red")  # Cambiar el LED a rojo si no está conectado
+        return "Error: No se pudo conectar al servidor. Modo local activado."
     except Exception as e:
-        messagebox.showerror("Error", f"No se pudo verificar el estado: {e}")
+        led_canvas.itemconfig(led_circle, fill="red")  # Cambiar el LED a rojo en caso de error
+        return f"Error inesperado: {e}"
+
+# Función para mostrar datos en la interfaz gráfica
+def mostrar_datos():
+    datos = obtener_datos()
+    resultado_label.config(text=datos)
+
+# Función para mostrar el estado del servidor en la interfaz gráfica
+def mostrar_estado():
+    estado = verificar_estado()
+    resultado_label.config(text=estado)
 
 # Crear la ventana principal
 root = tk.Tk()
@@ -33,9 +55,18 @@ frame_superior.grid(row=0, column=0, sticky="ew", padx=10, pady=10)
 btn_datos = tk.Button(frame_superior, text="Obtener Datos", command=mostrar_datos)
 btn_datos.grid(row=0, column=0, padx=5, pady=5)
 
+# Crear un frame para el botón "Verificar Estado" y el LED a su derecha
+frame_verificar_estado = tk.Frame(frame_superior)
+frame_verificar_estado.grid(row=0, column=1, padx=10, pady=5, sticky="e")
+
 # Botón para verificar el estado del servidor
-btn_estado = tk.Button(frame_superior, text="Verificar Estado", command=mostrar_estado)
-btn_estado.grid(row=0, column=1, padx=5, pady=5)
+btn_estado = tk.Button(frame_verificar_estado, text="Verificar Estado", command=mostrar_estado)
+btn_estado.pack(side="left", padx=5, pady=5)
+
+# Canvas para dibujar el "LED" que indicará el estado del servidor
+led_canvas = Canvas(frame_verificar_estado, width=20, height=20, highlightthickness=0)
+led_circle = led_canvas.create_oval(2, 2, 18, 18, fill="red")  # Iniciar con LED rojo
+led_canvas.pack(side="left", padx=5)
 
 # Etiqueta para mostrar los resultados de los botones, colocada al lado de los botones
 resultado_label = tk.Label(frame_superior, text="", bd=1, relief="solid", anchor="w")
