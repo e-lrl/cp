@@ -1,9 +1,12 @@
-import sys
-import os
-# Agregar la carpeta raiz al sys.path
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from flask import Flask
+from auth.routes import auth_bp
+from config import Config
 
-from server import app
+app = Flask(__name__)
+app.config.from_object(Config)
+
+# Registrar el blueprint para autenticación
+app.register_blueprint(auth_bp)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True)
